@@ -1,5 +1,5 @@
 {
-   "abstract" : "type alias for Type::Tiny",
+   "abstract" : "type alias for type constraints",
    "author" : [
       "kobaken <kentafly88@gmail.com>"
    ],
@@ -56,16 +56,17 @@
    "release_status" : "unstable",
    "resources" : {
       "bugtracker" : {
-         "web" : "https://github.com/kfly8/p5-Type-Alias/issues"
+         "web" : "https://github.com/kfly8/Type-Alias/issues"
       },
-      "homepage" : "https://github.com/kfly8/p5-Type-Alias",
+      "homepage" : "https://github.com/kfly8/Type-Alias",
       "repository" : {
          "type" : "git",
-         "url" : "https://github.com/kfly8/p5-Type-Alias.git",
-         "web" : "https://github.com/kfly8/p5-Type-Alias"
+         "url" : "https://github.com/kfly8/Type-Alias.git",
+         "web" : "https://github.com/kfly8/Type-Alias"
       }
    },
    "version" : "0.01",
+   "x_authority" : "cpan:KFLY",
    "x_serialization_backend" : "JSON::PP version 4.16",
    "x_static_install" : 1
 }
