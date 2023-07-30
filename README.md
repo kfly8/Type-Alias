@@ -6,7 +6,7 @@ Type::Alias - type alias for type constraints
 # SYNOPSIS
 
 ```perl
-use Type::Alias -declare => qw(ID User List Hoge);
+use Type::Alias -declare => [qw(ID User List Hoge)];
 use Types::Standard -types;
 
 type ID => Str;
@@ -44,7 +44,7 @@ our @EXPORT_OK; # => ID User List Hoge
 
 # DESCRIPTION
 
-Type::Alias is ...
+Type::Alias creates type aliases for existing type constraints such as Type::Tiny and Mo(o|u)se. The aim of this module is to enhance the reusability of types and make it easier to express types.
 
 # LICENSE
 
@@ -55,4 +55,4 @@ it under the same terms as Perl itself.
 
 # AUTHOR
 
-kobaken <kentafly88@gmail.com>
+kobaken <kfly@cpan.org>

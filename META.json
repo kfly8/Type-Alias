@@ -1,7 +1,7 @@
 {
    "abstract" : "type alias for type constraints",
    "author" : [
-      "kobaken <kentafly88@gmail.com>"
+      "kobaken <kfly@cpan.org>"
    ],
    "dynamic_config" : 0,
    "generated_by" : "Minilla/v3.1.22, CPAN::Meta::Converter version 2.150010",
@@ -67,6 +67,9 @@
    },
    "version" : "0.01",
    "x_authority" : "cpan:KFLY",
+   "x_contributors" : [
+      "kobaken <kentafly88@gmail.com>"
+   ],
    "x_serialization_backend" : "JSON::PP version 4.16",
    "x_static_install" : 1
 }

@@ -187,7 +187,7 @@ Type::Alias - type alias for type constraints
 
 =head1 DESCRIPTION
 
-Type::Alias is ...
+Type::Alias creates type aliases for existing type constraints such as Type::Tiny and Mo(o|u)se. The aim of this module is to enhance the reusability of types and make it easier to express types.
 
 =head1 LICENSE
 
@@ -198,7 +198,7 @@ it under the same terms as Perl itself.
 
 =head1 AUTHOR
 
-kobaken E<lt>kentafly88@gmail.comE<gt>
+kobaken E<lt>kfly@cpan.orgE<gt>
 
 =cut
 
