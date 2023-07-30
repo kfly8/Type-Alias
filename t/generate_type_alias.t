@@ -14,12 +14,7 @@ subtest 'If type constraint object is passed, return type alias coderef.' => sub
     ok $@, 'If type alias is not type function, cannot accept arguments';
 };
 
-subtest 'If one element arrayref is passed, return ArrayRef type alias coderef.' => sub {
-    my $type_alias = Type::Alias::generate_type_alias([Int]);
-    is $type_alias->(), ArrayRef[Int];
-};
-
-subtest 'If two or more element arrayref is passed, return Tuple type alias coderef.' => sub {
+subtest 'If arrayref is passed, return Tuple type alias coderef.' => sub {
     my $type_alias = Type::Alias::generate_type_alias([Int, Str]);
     is $type_alias->(), Tuple[Int, Str];
 };
@@ -32,7 +27,7 @@ subtest 'If hashref is passed, return Dict type alias coderef.' => sub {
 subtest 'If coderef is passed, return type function coderef.' => sub {
     my $coderef = sub {
         my ($R) = @_;
-        [$R]
+        $R ? ArrayRef[$R] : ArrayRef;
     };
 
     my $type_alias = Type::Alias::generate_type_alias($coderef);

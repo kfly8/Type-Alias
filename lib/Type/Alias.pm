@@ -91,12 +91,7 @@ sub to_type {
     }
     elsif (ref $v) {
         if (ref $v eq 'ARRAY') {
-            if (@$v == 1) {
-                return ArrayRef[ to_type($v->[0]) ];
-            }
-            else {
-                return Tuple[ map { to_type($_) } @$v ];
-            }
+            return Tuple[ map { to_type($_) } @$v ];
         }
         elsif (ref $v eq 'HASH') {
             return Dict[
@@ -167,7 +162,7 @@ Type::Alias - type alias for type constraints
     };
 
     type List => sub($R) {
-        [$R]
+       $R ? ArrayRef[$R] : ArrayRef;
     };
 
     type Hoge => List[User] | User;

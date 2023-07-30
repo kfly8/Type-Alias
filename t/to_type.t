@@ -30,14 +30,9 @@ subtest 'If type constraint object is passed, return it.' => sub {
     };
 };
 
-subtest 'If one element arrayref is passed, return ArrayRef type.' => sub {
-    is Type::Alias::to_type([Int]), ArrayRef[Int];
-    is Type::Alias::to_type([Str]), ArrayRef[Str];
-    is Type::Alias::to_type([Dict[a => Str]]), ArrayRef[Dict[a => Str]];
-    is Type::Alias::to_type([{ a => Str }]), ArrayRef[Dict[a => Str]];
-};
-
-subtest 'If two or more element arrayref is passed, return Tuple type.' => sub {
+subtest 'If arrayref is passed, return Tuple type.' => sub {
+    is Type::Alias::to_type([]), Tuple[];
+    is Type::Alias::to_type([Int]), Tuple[Int];
     is Type::Alias::to_type([Int, Str]), Tuple[Int, Str];
     is Type::Alias::to_type([Str, Int]), Tuple[Str, Int];
     is Type::Alias::to_type([Str, Int, Str]), Tuple[Str, Int, Str];
@@ -55,7 +50,7 @@ subtest 'If hashref is passed, return Dict type.' => sub {
 subtest 'If coderef is passed, return wrapped coderef which returns type. that is, return type function' => sub {
     my $coderef = sub {
         my ($R) = @_;
-        [$R]
+        $R ? ArrayRef[$R] : ArrayRef;
     };
 
     my $type = Type::Alias::to_type($coderef);
@@ -68,6 +63,8 @@ subtest 'If coderef is passed, return wrapped coderef which returns type. that i
 
         eval { $type->(Int) };
         ok $@, 'Type function requires arguments to be arrayref.';
+
+        is $type->(), ArrayRef, 'If no arguments are passed, return ArrayRef type.';
     };
 };
 
