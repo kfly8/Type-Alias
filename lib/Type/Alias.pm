@@ -8,8 +8,6 @@ use feature qw(state);
 use Carp qw(croak);
 use Scalar::Util qw(blessed);
 use Types::Standard qw(ArrayRef Dict Tuple);
-use B::Hooks::EndOfScope qw(on_scope_end);
-use Variable::Magic qw(wizard cast dispell);
 
 sub import {
     my ($class, %args) = @_;
@@ -23,19 +21,6 @@ sub import {
     # predefine type aliases
     my $type_aliases = $args{'-declare'} // [];
     $class->_import_type_aliases($target_package, $type_aliases);
-
-    # push @EXPORT_OK => @type_aliases
-    if ($args{'-export_ok'}) {
-        for my $export (@{ $args{'-export_ok'} }) {
-            unless (grep { $_ eq $export } @$type_aliases) {
-                croak "Type alias '$export' is not declared. should fix -declare or -export_ok.";
-            }
-        }
-    }
-    my $export_ok = $args{'-export_ok'} // $type_aliases;
-    on_scope_end {
-        $class->_import_export_ok($target_package, $export_ok);
-    }
 }
 
 sub _import_type_alias_function {
@@ -68,26 +53,6 @@ sub _import_type_aliases {
         *{"${target_package}::${type_alias}"} = sub :prototype(;$) {
             croak "You should define type alias '$type_alias' before using it."
         }
-    }
-}
-
-sub _import_export_ok {
-    my ($class, $target_package, $export_ok) = @_;
-
-    my $EXPORT_OK = "${target_package}::EXPORT_OK";
-
-    no strict qw(refs);
-    if (defined *{$EXPORT_OK}{ARRAY}) {
-        push @{$EXPORT_OK}, @$export_ok;
-
-        my $wiz;
-        $wiz = wizard(
-            set => sub {
-                push @{$_[0]} => @$export_ok;
-                dispell @{$EXPORT_OK}, $wiz;
-            },
-        );
-        cast @{$EXPORT_OK}, $wiz;
     }
 }
 
@@ -206,19 +171,6 @@ C<-type_alias> is a function name that defines type aliases. The default name is
     use Type::Alias -type_alias => 'mytype';
 
     mytype ID => Str; # declare type alias
-
-
-=head3 -export_ok
-
-C<-export_ok> is an array reference that defines type aliases to be exported. The default is all type aliases defined by C<-declare>.
-
-    # Default case:
-    use Type::Alias -declare => [qw(ID User List)];
-    our @EXPORT_OK; # => qw(ID User List);
-
-    # Specify export_ok:
-    use Type::Alias -declare => [qw(ID User List)], -export_ok => [qw(List)];
-    our @EXPORT_OK; # => qw(List);
 
 =head2 EXPORTED FUNCTIONS
 

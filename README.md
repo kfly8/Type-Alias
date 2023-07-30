@@ -55,20 +55,6 @@ use Type::Alias -type_alias => 'mytype';
 mytype ID => Str; # declare type alias
 ```
 
-### -export\_ok
-
-`-export_ok` is an array reference that defines type aliases to be exported. The default is all type aliases defined by `-declare`.
-
-```perl
-# Default case:
-use Type::Alias -declare => [qw(ID User List)];
-our @EXPORT_OK; # => qw(ID User List);
-
-# Specify export_ok:
-use Type::Alias -declare => [qw(ID User List)], -export_ok => [qw(List)];
-our @EXPORT_OK; # => qw(List);
-```
-
 ## EXPORTED FUNCTIONS
 
 ### type($alias\_name, $type\_alias\_args)

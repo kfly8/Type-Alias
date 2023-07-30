@@ -20,7 +20,4 @@ type List => sub {
 
 is List[Str], ArrayRef[Str];
 
-our @EXPORT_OK;
-is_deeply \@EXPORT_OK, [qw(ID User List)];
-
 done_testing;
