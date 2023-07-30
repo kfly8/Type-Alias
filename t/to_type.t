@@ -62,8 +62,8 @@ subtest 'If coderef is passed, return wrapped coderef which returns type. that i
     is ref $type, 'CODE', 'return type function';
 
     subtest 'If type function is passed arguments, generate type using the arguments.' => sub {
-        is $type->([Int]), ArrayRef[Int],
-        is $type->([Str]), ArrayRef[Str],
+        is $type->([Int]), ArrayRef[Int];
+        is $type->([Str]), ArrayRef[Str];
         is $type->([{a => Int}]), ArrayRef[ Dict[a => Int] ], 'The arguments of type function become type through Type::Alias::to_type.';
 
         eval { $type->(Int) };
