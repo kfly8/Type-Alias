@@ -24,6 +24,13 @@ sub import {
     $class->_import_type_aliases($target_package, $type_aliases);
 
     # push @EXPORT_OK => @type_aliases
+    if ($args{'-export_ok'}) {
+        for my $export (@{ $args{'-export_ok'} }) {
+            unless (grep { $_ eq $export } @$type_aliases) {
+                croak "Type alias '$export' is not declared. should fix -declare or -export_ok.";
+            }
+        }
+    }
     my $export_ok = $args{'-export_ok'} // $type_aliases;
     on_scope_end {
         $class->_import_export_ok($target_package, $export_ok);
