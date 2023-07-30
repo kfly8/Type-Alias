@@ -1,4 +1,4 @@
-requires 'perl', '5.016000';
+requires 'perl', '5.020000';
 
 requires 'Type::Tiny';
 requires 'B::Hooks::EndOfScope';
