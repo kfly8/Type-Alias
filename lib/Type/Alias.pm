@@ -25,7 +25,7 @@ sub import {
 
     # predefine type aliases
     my @type_aliases;
-    if ( ($args[0]||'') =~ /^-declare$/) {
+    if ( ($args[0]||'') eq '-declare') {
         shift @args;
         @type_aliases = @args;
         $class->_import_type_aliases($target_package, @type_aliases);
@@ -60,7 +60,7 @@ sub _import_type_aliases {
 
     for my $type_alias (@type_aliases) {
         if ($target_package->can($type_alias)) {
-            croak "Cannot redeclare alias '$type_alias'";
+            croak "Cannot predeclare type alias '$type_alias'";
         }
 
         no strict qw(refs);
