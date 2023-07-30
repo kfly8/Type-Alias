@@ -18,7 +18,7 @@ type User => {
 };
 
 type List => sub($R) {
-    [$R]
+   $R ? ArrayRef[$R] : ArrayRef;
 };
 
 type Hoge => List[User] | User;

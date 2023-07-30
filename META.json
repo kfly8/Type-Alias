@@ -44,7 +44,7 @@
          "requires" : {
             "B::Hooks::EndOfScope" : "0",
             "Type::Tiny" : "0",
-            "perl" : "5.016000"
+            "perl" : "5.020000"
          }
       },
       "test" : {
