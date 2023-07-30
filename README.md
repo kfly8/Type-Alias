@@ -33,7 +33,7 @@ type List => sub($R) {
 
 # DESCRIPTION
 
-Type::Alias creates type aliases for existing type constraints such as Type::Tiny and Mo(o|u)se. The aim of this module is to enhance the reusability of types and make it easier to express types.
+Type::Alias creates type aliases for existing type constraints such as Type::Tiny, Moose. The aim of this module is to enhance the reusability of types and make it easier to express types.
 
 ## IMPORT OPTIONS
 
