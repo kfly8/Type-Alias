@@ -61,11 +61,11 @@ mytype ID => Str; # declare type alias
 
 ```perl
 # Default case:
-use Type::Alias -declare => [qw(ID User List];
+use Type::Alias -declare => [qw(ID User List)];
 our @EXPORT_OK; # => qw(ID User List);
 
 # Specify export_ok:
-use Type::Alias -declare => [qw(ID User List], -export_ok => [qw(List)];
+use Type::Alias -declare => [qw(ID User List)], -export_ok => [qw(List)];
 our @EXPORT_OK; # => qw(List);
 ```
 
