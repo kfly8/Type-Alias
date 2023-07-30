@@ -35,7 +35,7 @@ type List => sub($R) {
 
 Type::Alias creates type aliases for existing type constraints such as Type::Tiny and Mo(o|u)se. The aim of this module is to enhance the reusability of types and make it easier to express types.
 
-## OPTIONS
+## IMPORT OPTIONS
 
 ### -declare
 
@@ -67,6 +67,49 @@ our @EXPORT_OK; # => qw(ID User List);
 # Specify export_ok:
 use Type::Alias -declare => [qw(ID User List)], -export_ok => [qw(List)];
 our @EXPORT_OK; # => qw(List);
+```
+
+## EXPORTED FUNCTIONS
+
+### type($alias\_name, $type\_alias\_args)
+
+`type` is a function that defines type aliases. The default name is 'type'.
+
+Given a type constraint in `$type_alias_args`, returns the type constraint as is.
+Type::Alias treats objects with `check` and `get_message` methods as type constraints.
+
+```perl
+type ID => Str;
+# sub ID(;$) { Str }
+```
+
+Given a hash reference in `$type_alias_args`, returns the type constraint defined by Type::Tiny's Dict type.
+
+```perl
+type Point => {
+    x => Int,
+    y => Int,
+};
+# sub Point(;$) { Dict[x=>Int,y=>Int] }
+```
+
+Given an array reference in `$type_alias_args`, returns the type constraint defined by Type::Tiny's Tuple type.
+
+```perl
+type Option => [Str, Int];
+# sub Option(;$) { Tuple[Str,Int] }
+```
+
+Given a code reference in `$type_alias_args`, defines a type function that accepts a type constraint as an argument and return the type constraint.
+
+```perl
+type List => sub($R) {
+   $R ? ArrayRef[$R] : ArrayRef;
+};
+# sub List :prototype(;$) {
+#   my $R = Type::Alias::to_type($_[0]);
+#   $R ? ArrayRef[$R] : ArrayRef;
+# }
 ```
 
 # LICENSE
