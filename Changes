@@ -2,6 +2,10 @@ Revision history for Perl extension Type-Alias
 
 {{$NEXT}}
 
+0.02 2023-07-30T12:43:50Z
+    [BUG FIXES]
+    - push `@type_aliases` after `@EXPORT_OK` is set. #1
+
 0.01 2023-07-30T05:43:32Z
 
     - original version

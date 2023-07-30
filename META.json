@@ -44,6 +44,7 @@
          "requires" : {
             "B::Hooks::EndOfScope" : "0",
             "Type::Tiny" : "0",
+            "Variable::Magic" : "0",
             "perl" : "5.020000"
          }
       },
@@ -65,7 +66,7 @@
          "web" : "https://github.com/kfly8/Type-Alias"
       }
    },
-   "version" : "0.01",
+   "version" : "0.02",
    "x_authority" : "cpan:KFLY",
    "x_contributors" : [
       "kobaken <kentafly88@gmail.com>"
