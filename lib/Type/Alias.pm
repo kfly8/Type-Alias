@@ -11,29 +11,22 @@ use Types::Standard qw(ArrayRef Dict Tuple);
 use B::Hooks::EndOfScope qw(on_scope_end);
 
 sub import {
-    my ($class, @args) = @_;
+    my ($class, %args) = @_;
 
     my $target_package = caller;
 
     # define type alias function
-    my $type_alias_function_name = 'type';
-    if ( ($args[0]||'') eq '-type_alias') {
-        shift @args;
-        $type_alias_function_name = shift @args;
-    }
+    my $type_alias_function_name = $args{'-type_alias'} // 'type';
     $class->_import_type_alias_function($target_package, $type_alias_function_name);
 
     # predefine type aliases
-    my @type_aliases;
-    if ( ($args[0]||'') eq '-declare') {
-        shift @args;
-        @type_aliases = @args;
-        $class->_import_type_aliases($target_package, @type_aliases);
-    }
+    my $type_aliases = $args{'-declare'} // [];
+    $class->_import_type_aliases($target_package, $type_aliases);
 
     # push @EXPORT_OK => @type_aliases
+    my $export_ok = $args{'-export_ok'} // $type_aliases;
     on_scope_end {
-        $class->_import_export_ok($target_package, @type_aliases);
+        $class->_import_export_ok($target_package, $export_ok);
     }
 }
 
@@ -56,9 +49,9 @@ sub _import_type_alias_function {
 }
 
 sub _import_type_aliases {
-    my ($class, $target_package, @type_aliases) = @_;
+    my ($class, $target_package, $type_aliases) = @_;
 
-    for my $type_alias (@type_aliases) {
+    for my $type_alias (@$type_aliases) {
         if ($target_package->can($type_alias)) {
             croak "Cannot predeclare type alias '${target_package}::${type_alias}'.";
         }
@@ -71,11 +64,11 @@ sub _import_type_aliases {
 }
 
 sub _import_export_ok {
-    my ($class, $target_package, @type_aliases) = @_;
+    my ($class, $target_package, $export_ok) = @_;
 
     no strict qw(refs);
     if (defined *{"${target_package}::EXPORT_OK"}{ARRAY}) {
-        push @{"${target_package}::EXPORT_OK"}, @type_aliases;
+        push @{"${target_package}::EXPORT_OK"}, @$export_ok;
     }
 }
 
@@ -150,7 +143,7 @@ Type::Alias - type alias for type constraints
 
 =head1 SYNOPSIS
 
-    use Type::Alias -declare => qw(ID User List Hoge);
+    use Type::Alias -declare => [qw(ID User List Hoge)];
     use Types::Standard -types;
 
     type ID => Str;
