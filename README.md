@@ -75,7 +75,7 @@ our @EXPORT_OK; # => qw(List);
 
 `type` is a function that defines type aliases. The default name is 'type'.
 
-Given a type constraint in `$type_alias_args`, returns the type constraint as is.
+Given a type constraint in `$type_alias_args`, it returns the type constraint as is.
 Type::Alias treats objects with `check` and `get_message` methods as type constraints.
 
 ```perl
@@ -83,7 +83,7 @@ type ID => Str;
 # sub ID(;$) { Str }
 ```
 
-Given a hash reference in `$type_alias_args`, returns the type constraint defined by Type::Tiny's Dict type.
+Given a hash reference in `$type_alias_args`, it returns the type constraint defined by Type::Tiny's Dict type.
 
 ```perl
 type Point => {
@@ -93,14 +93,14 @@ type Point => {
 # sub Point(;$) { Dict[x=>Int,y=>Int] }
 ```
 
-Given an array reference in `$type_alias_args`, returns the type constraint defined by Type::Tiny's Tuple type.
+Given an array reference in `$type_alias_args`, it returns the type constraint defined by Type::Tiny's Tuple type.
 
 ```perl
 type Option => [Str, Int];
 # sub Option(;$) { Tuple[Str,Int] }
 ```
 
-Given a code reference in `$type_alias_args`, defines a type function that accepts a type constraint as an argument and return the type constraint.
+Given a code reference in `$type_alias_args`, it defines a type function that accepts a type constraint as an argument and return the type constraint.
 
 ```perl
 type List => sub($R) {

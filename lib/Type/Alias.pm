@@ -214,13 +214,13 @@ C<-export_ok> is an array reference that defines type aliases to be exported. Th
 
 C<type> is a function that defines type aliases. The default name is 'type'.
 
-Given a type constraint in C<$type_alias_args>, returns the type constraint as is.
+Given a type constraint in C<$type_alias_args>, it returns the type constraint as is.
 Type::Alias treats objects with C<check> and C<get_message> methods as type constraints.
 
     type ID => Str;
     # sub ID(;$) { Str }
 
-Given a hash reference in C<$type_alias_args>, returns the type constraint defined by Type::Tiny's Dict type.
+Given a hash reference in C<$type_alias_args>, it returns the type constraint defined by Type::Tiny's Dict type.
 
     type Point => {
         x => Int,
@@ -228,12 +228,12 @@ Given a hash reference in C<$type_alias_args>, returns the type constraint defin
     };
     # sub Point(;$) { Dict[x=>Int,y=>Int] }
 
-Given an array reference in C<$type_alias_args>, returns the type constraint defined by Type::Tiny's Tuple type.
+Given an array reference in C<$type_alias_args>, it returns the type constraint defined by Type::Tiny's Tuple type.
 
     type Option => [Str, Int];
     # sub Option(;$) { Tuple[Str,Int] }
 
-Given a code reference in C<$type_alias_args>, defines a type function that accepts a type constraint as an argument and return the type constraint.
+Given a code reference in C<$type_alias_args>, it defines a type function that accepts a type constraint as an argument and return the type constraint.
 
     type List => sub($R) {
        $R ? ArrayRef[$R] : ArrayRef;
