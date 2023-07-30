@@ -182,14 +182,14 @@ Type::Alias creates type aliases for existing type constraints such as Type::Tin
 
 =head3 -declare
 
-C<-declare> is an array reference that defines type aliases. The default is [].
+C<-declare> is an array reference that defines type aliases. The default is C<[]>.
 
     use Type::Alias -declare => [qw(ID User List)];
 
 
 =head3 -type_alias
 
-C<-type_alias> is a function name that defines type aliases. The default is 'type'.
+C<-type_alias> is a function name that defines type aliases. The default name is B<type>.
 
     use Type::Alias -type_alias => 'mytype';
 
@@ -212,7 +212,7 @@ C<-export_ok> is an array reference that defines type aliases to be exported. Th
 
 =head3 type($alias_name, $type_alias_args)
 
-C<type> is a function that defines type aliases. The default name is 'type'.
+C<type> is a function that defines type aliases. The default name is B<type>.
 
 Given a type constraint in C<$type_alias_args>, it returns the type constraint as is.
 Type::Alias treats objects with C<check> and C<get_message> methods as type constraints.
@@ -242,6 +242,8 @@ Given a code reference in C<$type_alias_args>, it defines a type function that a
     #   my $R = Type::Alias::to_type($_[0]);
     #   $R ? ArrayRef[$R] : ArrayRef;
     # }
+
+Internally, it recursively generates Type::Tiny type constraints based on C<$type_alias_args> using the Type::Alias::to_type function.
 
 =head1 LICENSE
 

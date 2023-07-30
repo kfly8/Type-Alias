@@ -39,7 +39,7 @@ Type::Alias creates type aliases for existing type constraints such as Type::Tin
 
 ### -declare
 
-`-declare` is an array reference that defines type aliases. The default is \[\].
+`-declare` is an array reference that defines type aliases. The default is `[]`.
 
 ```perl
 use Type::Alias -declare => [qw(ID User List)];
@@ -47,7 +47,7 @@ use Type::Alias -declare => [qw(ID User List)];
 
 ### -type\_alias
 
-`-type_alias` is a function name that defines type aliases. The default is 'type'.
+`-type_alias` is a function name that defines type aliases. The default name is **type**.
 
 ```perl
 use Type::Alias -type_alias => 'mytype';
@@ -73,7 +73,7 @@ our @EXPORT_OK; # => qw(List);
 
 ### type($alias\_name, $type\_alias\_args)
 
-`type` is a function that defines type aliases. The default name is 'type'.
+`type` is a function that defines type aliases. The default name is **type**.
 
 Given a type constraint in `$type_alias_args`, it returns the type constraint as is.
 Type::Alias treats objects with `check` and `get_message` methods as type constraints.
@@ -111,6 +111,8 @@ type List => sub($R) {
 #   $R ? ArrayRef[$R] : ArrayRef;
 # }
 ```
+
+Internally, it recursively generates Type::Tiny type constraints based on `$type_alias_args` using the Type::Alias::to\_type function.
 
 # LICENSE
 
