@@ -81,15 +81,22 @@ sub _import_export_ok {
 
 sub to_type {
     my $v = shift;
-    if (blessed($v) && $v->isa('Type::Tiny')) {
-        return $v;
+    if (blessed($v)) {
+        if ($v->can('check') && $v->can('get_message')) {
+            return $v;
+        }
+        else {
+            croak 'This object is not supported: '. ref $v;
+        }
     }
     elsif (ref $v) {
-        if (ref $v eq 'ARRAY' && @$v == 1) {
-            return ArrayRef[to_type($v->[0])];
-        }
-        elsif (ref $v eq 'ARRAY') {
-            return Tuple[ map { to_type($_) } @$v ];
+        if (ref $v eq 'ARRAY') {
+            if (@$v == 1) {
+                return ArrayRef[ to_type($v->[0]) ];
+            }
+            else {
+                return Tuple[ map { to_type($_) } @$v ];
+            }
         }
         elsif (ref $v eq 'HASH') {
             return Dict[
@@ -110,11 +117,12 @@ sub to_type {
             }
         }
         else {
-            ...
+            croak 'This reference is not supported: ' . ref $v ;
         }
     }
     else {
-        ...
+        # TODO: Is it better to make it a type that checks whether it matches the given value?
+        croak 'This value is not supported: ' . (defined $v ? $v : 'undef');
     }
 }
 
@@ -143,7 +151,7 @@ __END__
 
 =head1 NAME
 
-Type::Alias - type alias for Type::Tiny
+Type::Alias - type alias for type constraints
 
 =head1 SYNOPSIS
 
