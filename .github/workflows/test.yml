@@ -7,6 +7,7 @@ jobs:
       matrix:
         perl:
           [
+            "5.38",
             "5.36",
             "5.34",
             "5.32",
@@ -18,19 +19,44 @@ jobs:
             "5.20",
             "5.18",
             "5.16",
-            "5.14",
-            "5.12",
-            "5.10"
           ]
+        include:
+          - perl: 5.38
+            coverage: true
+
     name: Perl ${{ matrix.perl }}
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Setup perl
         uses: shogo82148/actions-setup-perl@v1
         with:
           perl-version: ${{ matrix.perl }}
+
+      - name: Install dependencies
+        run: |
+          cpm install -g --with-all
+
       - name: Install dependencies
         run: cpanm -nq --installdeps --with-develop --with-recommends .
       - name: Run test
         run: prove -lr t
+
+      - name: Build
+        run: |
+          perl Build.PL
+          ./Build
+
+      - name: Run test
+        run: |
+          ./Build test
+
+      - name: Run coverage
+        if: ${{ matrix.coverage }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cpm install -g Devel::Cover::Report::Coveralls
+          cover -test -report coveralls
 
