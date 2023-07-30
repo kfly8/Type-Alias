@@ -200,17 +200,13 @@ C<-type_alias> is a function name that defines type aliases. The default is 'typ
 
 C<-export_ok> is an array reference that defines type aliases to be exported. The default is all type aliases defined by C<-declare>.
 
-    Default case:
+    # Default case:
     use Type::Alias -declare => [qw(ID User List];
-    our @EXPORT_OK;
+    our @EXPORT_OK; # => qw(ID User List);
 
-    # => @EXPORT_OK = qw(ID User List);
-
-    Specify export_ok:
+    # Specify export_ok:
     use Type::Alias -declare => [qw(ID User List], -export_ok => [qw(List)];
-    our @EXPORT_OK;
-
-    # => @EXPORT_OK = qw(List);
+    our @EXPORT_OK; # => qw(List);
 
 =head1 LICENSE
 
