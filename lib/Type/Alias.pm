@@ -13,7 +13,7 @@ use B::Hooks::EndOfScope qw(on_scope_end);
 sub import {
     my ($class, @args) = @_;
 
-    my $target_package = caller(1);
+    my $target_package = caller;
 
     # define type alias function
     my $type_alias_function_name = 'type';
@@ -41,7 +41,7 @@ sub _import_type_alias_function {
     my ($class, $target_package, $type_alias_function_name) = @_;
 
     if ($target_package->can($type_alias_function_name)) {
-        croak "Alreay exists function '$type_alias_function_name'. Please use another type alias function name.";
+        croak "Alreay exists function '${target_package}::${type_alias_function_name}'. Please use another type alias function name.";
     }
 
     no strict qw(refs);
@@ -60,7 +60,7 @@ sub _import_type_aliases {
 
     for my $type_alias (@type_aliases) {
         if ($target_package->can($type_alias)) {
-            croak "Cannot predeclare type alias '$type_alias'";
+            croak "Cannot predeclare type alias '${target_package}::${type_alias}'.";
         }
 
         no strict qw(refs);

@@ -21,7 +21,6 @@ subtest 'Push automaticaly type alises to @EXPORT_OK ' => sub {
         use Type::Alias -declare => qw(Foo);
         our @EXPORT_OK;
     };
-
     is_deeply \@TestOptionDeclareWithExportOk::EXPORT_OK, ['Foo'];
 };
 
@@ -32,7 +31,7 @@ subtest 'If Alrealy exists same name function, cannot predeclare type alias.' =>
             use Type::Alias -declare => qw(Foo);
         };
     ';
-    like $@, qr/Cannot predeclare type alias 'Foo'/;
+    like $@, qr/Cannot predeclare type alias 'TestErrorDeclare::Foo'/;
 };
 
 subtest '-type_alias option specify type_alias function name, which default is `type`.' => sub {
@@ -51,7 +50,7 @@ subtest '-type_alias option specify type_alias function name, which default is `
             use Type::Alias;
         };
     }';
-    like $@, qr/Alreay exists function 'type'/;
+    like $@, qr/Alreay exists function 'TestErrorTypeAlias::type'/;
 };
 
 done_testing;
