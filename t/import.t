@@ -11,7 +11,7 @@ subtest '-declare option predefine type aliases.' => sub {
     };
 
     ok +TestOptionDeclare->can('Foo'), 'predefined Foo';
-    eval { TestOptionDeclare::Foo };
+    eval { TestOptionDeclare::Foo() };
     like $@, qr/should define type alias 'Foo'/;
 };
 
