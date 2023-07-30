@@ -2,6 +2,10 @@ Revision history for Perl extension Type-Alias
 
 {{$NEXT}}
 
+0.03 2023-07-30T23:26:34Z
+    [INCOMPATIBLE CHANGE]
+    - Remove -export_ok option. #2
+
 0.02 2023-07-30T12:43:50Z
     [BUG FIXES]
     - push `@type_aliases` after `@EXPORT_OK` is set. #1
