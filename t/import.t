@@ -47,18 +47,35 @@ subtest '-type_alias option specify type_alias function name, which default is `
 subtest '-export_ok option' => sub {
     subtest 'Push -export_ok to @EXPORT_OK ' => sub {
         package TestOptionExportOk {
+            our @EXPORT_OK = qw(hello);
             use Type::Alias -declare => [qw(Foo Bar)], -export_ok => [qw(Bar)];
-            our @EXPORT_OK;
         };
-        is_deeply \@TestOptionExportOk::EXPORT_OK, ['Bar'];
+        is_deeply \@TestOptionExportOk::EXPORT_OK, ['hello', 'Bar'];
     };
 
     subtest 'Push automaticaly type alises to @EXPORT_OK ' => sub {
         package TestNoOptionExportOk {
             use Type::Alias -declare => [qw(Foo)];
+            our @EXPORT_OK = qw(hello);
+        };
+        is_deeply \@TestNoOptionExportOk::EXPORT_OK, ['hello', 'Foo'];
+    };
+
+    subtest 'Set automaticaly type alises to @EXPORT_OK ' => sub {
+        package TestNoOptionExportOk2 {
+            use Type::Alias -declare => [qw(Foo)];
             our @EXPORT_OK;
         };
-        is_deeply \@TestNoOptionExportOk::EXPORT_OK, ['Foo'];
+        is_deeply \@TestNoOptionExportOk2::EXPORT_OK, ['Foo'];
+    };
+
+    subtest 'Set and push type alises to @EXPORT_OK ' => sub {
+        package TestNoOptionExportOk3 {
+            use Type::Alias -declare => [qw(Foo)];
+            our @EXPORT_OK = qw(hello);
+            push @EXPORT_OK, 'world';
+        };
+        is_deeply \@TestNoOptionExportOk3::EXPORT_OK, ['hello', 'Foo', 'world'];
     };
 
     subtest 'If you specify -export_ok option that include type alias not declared, throw error.' => sub {
@@ -70,6 +87,7 @@ subtest '-export_ok option' => sub {
         }';
         like $@, qr/Type alias 'Bar' is not declared/;
     };
+
 };
 
 done_testing;

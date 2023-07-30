@@ -9,6 +9,7 @@ use Carp qw(croak);
 use Scalar::Util qw(blessed);
 use Types::Standard qw(ArrayRef Dict Tuple);
 use B::Hooks::EndOfScope qw(on_scope_end);
+use Variable::Magic qw(wizard cast dispell);
 
 sub import {
     my ($class, %args) = @_;
@@ -73,9 +74,20 @@ sub _import_type_aliases {
 sub _import_export_ok {
     my ($class, $target_package, $export_ok) = @_;
 
+    my $EXPORT_OK = "${target_package}::EXPORT_OK";
+
     no strict qw(refs);
-    if (defined *{"${target_package}::EXPORT_OK"}{ARRAY}) {
-        push @{"${target_package}::EXPORT_OK"}, @$export_ok;
+    if (defined *{$EXPORT_OK}{ARRAY}) {
+        push @{$EXPORT_OK}, @$export_ok;
+
+        my $wiz;
+        $wiz = wizard(
+            set => sub {
+                push @{$_[0]} => @$export_ok;
+                dispell @{$EXPORT_OK}, $wiz;
+            },
+        );
+        cast @{$EXPORT_OK}, $wiz;
     }
 }
 
