@@ -141,7 +141,7 @@ Type::Alias - type alias for type constraints
 
 =head1 SYNOPSIS
 
-    use Type::Alias -alias => [qw(ID User)], -fun => [qw(List)];
+    use Type::Alias -alias => [qw(ID User UserData)], -fun => [qw(List)];
     use Types::Standard -types;
 
     type ID => Str;
@@ -152,11 +152,24 @@ Type::Alias - type alias for type constraints
         age  => Int,
     };
 
-    type List => sub($R) {
-       $R ? ArrayRef[$R] : ArrayRef;
+    type List => sub {
+        my ($R) = @_;
+        $R ? ArrayRef[$R] : ArrayRef;
     };
 
-    # =>
+    type UserData => List[User] | User;
+
+    UserData->check([
+        { id => '1', name => 'foo', age => 20 },
+        { id => '2', name => 'bar', age => 30 },
+    ]); # OK
+
+    UserData->check(
+        { id => '1', name => 'foo', age => 20 },
+    ); # OK
+
+    # Internally List[User] is equivalent to the following type:
+    #
     # ArrayRef[
     #     Dict[
     #         age=>Int,
@@ -167,7 +180,7 @@ Type::Alias - type alias for type constraints
 
 =head1 DESCRIPTION
 
-Type::Alias creates type aliases for existing type constraints such as Type::Tiny, Moose. The aim of this module is to enhance the reusability of types and make it easier to express types.
+Type::Alias creates type aliases and type functions for existing type constraints such as Type::Tiny, Moose, Mouse. The aim of this module is to enhance the reusability of types and make it easier to express types.
 
 =head2 IMPORT OPTIONS
 
@@ -206,40 +219,143 @@ The C<type> option is used to configure the type function that defines type alia
 
 =head2 EXPORTED FUNCTIONS
 
-=head3 type($alias_name, $type_alias_args)
+=head3 type($alias_name, $type_args)
 
-C<type> is a function that defines type aliases. The default name is B<type>.
+C<type> is a function that defines type alias and type function.
+It recursively generates type constraints based on C<$type_args>.
 
-Given a type constraint in C<$type_alias_args>, it returns the type constraint as is.
+Given a type constraint in C<$type_args>, it returns the type constraint as is.
 Type::Alias treats objects with C<check> and C<get_message> methods as type constraints.
 
     type ID => Str;
-    # sub ID() { Str }
 
-Given a hash reference in C<$type_alias_args>, it returns the type constraint defined by Type::Tiny's Dict type.
+    ID->check('foo'); # OK
+
+Internally C<ID> is equivalent to the following type:
+
+    sub ID() { Str }
+
+Given a hash reference in C<$type_args>, it returns the type constraint defined by Type::Tiny's Dict type.
 
     type Point => {
         x => Int,
         y => Int,
     };
-    # sub Point() { Dict[x=>Int,y=>Int] }
 
-Given an array reference in C<$type_alias_args>, it returns the type constraint defined by Type::Tiny's Tuple type.
+    Point->check({
+        x => 1,
+        y => 2
+    }); # OK
+
+Internally C<Point> is equivalent to the following type:
+
+    sub Point() { Dict[x=>Int,y=>Int] }
+
+Given an array reference in C<$type_args>, it returns the type constraint defined by Type::Tiny's Tuple type.
 
     type Option => [Str, Int];
-    # sub Option() { Tuple[Str,Int] }
 
-Given a code reference in C<$type_alias_args>, it defines a type function that accepts a type constraint as an argument and return the type constraint.
+    Option->check('foo', 1); # OK
+
+Internally C<Option> is equivalent to the following type:
+
+    sub Option() { Tuple[Str,Int] }
+
+Given a code reference in C<$type_args>, it defines a type function that accepts a type constraint as an argument and return the type constraint.
 
     type List => sub($R) {
        $R ? ArrayRef[$R] : ArrayRef;
     };
-    # sub List :prototype(;$) {
-    #   my $R = Type::Alias::to_type($_[0]);
-    #   $R ? ArrayRef[$R] : ArrayRef;
-    # }
 
-Internally, it recursively generates Type::Tiny type constraints based on C<$type_alias_args> using the Type::Alias::to_type function.
+    type Points => List[{ x => Int, y => Int }];
+
+    Points->check([
+        { x => 1, y => 2 },
+        { x => 3, y => 4 },
+    ]); # OK
+
+Internally C<List> is equivalent to the following type:
+
+    sub List :prototype(;$) {
+       my @args = map { Type::Alias::to_type($_) } @{$_[0]};
+
+        sub($R) {
+           $R ? ArrayRef[$R] : ArrayRef;
+        }->(@args);
+    }
+
+And C<Points> is equivalent to the following type:
+
+    sub Points() { List[Dict[x=>Int,y=>Int]] }
+
+=head1 COOKBOOK
+
+=head2 Exporter
+
+Type::Alias is designed to be used with Exporter. The following is an example of using Type::Alias with Exporter.
+
+    package MyService {
+
+        use Exporter 'import';
+        our @EXPORT_OK = qw(hello Message);
+
+        use Type::Alias -alias => [qw(Message)];
+        use Types::Common -types;
+
+        type Message => StrLength[1, 100];
+
+        sub hello { ... }
+    }
+
+    package MyApp {
+
+        use MyService qw(Message);
+        Message->check('World!');
+    }
+
+=head2 Function::Parameters
+
+Type::Alias is designed to be used with Function::Parameters. The following is an example of using Type::Alias with Function::Parameters.
+
+    package Sample {
+
+        use Exporter 'import';
+        our @EXPORT_OK = qw(User);
+
+        use Type::Alias -alias => [qw(User)];
+        use Types::Standard -types;
+
+        type User => {
+            name => Str,
+        };
+    }
+
+    use Types::Standard -types;
+    use Function::Parameters;
+
+    use Sample qw(User);
+
+    fun hello (User $user) {
+        return "Hello, $user->{name}!";
+    }
+
+    hello({ name => 'foo' }) # => 'Hello, foo!';
+
+However, if you write a type alias inline as follows, the current implementation will not work.
+
+    use Type::Alias -alias => [qw(Gorilla)];
+
+    type Gorilla => Dict[ name => Str ];
+
+    fun ooh(Gorilla $user) { # => ERROR: type Gorilla is not defined at compile time
+        return "ooh ooh, $user->{name}!";
+    }
+
+    ooh({ name => 'gorilla' }) # => 'ooh ooh, gorilla!';
+
+=head1 SEE ALSO
+
+L<Type::Tiny>
 
 =head1 LICENSE
 
