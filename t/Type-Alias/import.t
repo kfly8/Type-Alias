@@ -49,15 +49,15 @@ subtest '-fun option predefine type functions.' => sub {
     };
 };
 
-subtest '-type_alias option specify type_alias function name, which default is `type`.' => sub {
+subtest '-opts option specifies just a few options for Type::Alias.' => sub {
 
-    package TestOptionTypeAlias {
-        use Type::Alias -type_alias => 'mytype', -alias => [qw(Foo)];
+    package TestRenameType {
+        use Type::Alias type => { -as => 'mytype' }, -alias => [qw(Foo)];
         use Types::Standard qw(Str);
 
         mytype Foo => Str;
     };
-    is TestOptionTypeAlias::Foo, Str;
+    is TestRenameType::Foo, Str;
 
     eval '
         package TestErrorTypeAlias {
