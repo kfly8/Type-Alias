@@ -19,8 +19,12 @@ sub import {
     $class->_import_type_alias_function($target_package, $type_alias_function_name);
 
     # predefine type aliases
-    my $type_aliases = $args{'-declare'} // [];
+    my $type_aliases = $args{'-alias'} // [];
     $class->_import_type_aliases($target_package, $type_aliases);
+
+    # predefine type functions
+    my $type_functions = $args{'-fun'} // [];
+    $class->_import_type_funcitons($target_package, $type_functions);
 }
 
 sub _import_type_alias_function {
@@ -50,8 +54,23 @@ sub _import_type_aliases {
         }
 
         no strict qw(refs);
-        *{"${target_package}::${type_alias}"} = sub :prototype(;$) {
+        *{"${target_package}::${type_alias}"} = sub :prototype() {
             croak "You should define type alias '$type_alias' before using it."
+        }
+    }
+}
+
+sub _import_type_funcitons {
+    my ($class, $target_package, $type_functions) = @_;
+
+    for my $type_function (@$type_functions) {
+        if ($target_package->can($type_function)) {
+            croak "Cannot predeclare type function '${target_package}::${type_function}'.";
+        }
+
+        no strict qw(refs);
+        *{"${target_package}::${type_function}"} = sub :prototype(;$) {
+            croak "You should define type function '$type_function' before using it."
         }
     }
 }
@@ -99,21 +118,20 @@ sub to_type {
 }
 
 sub generate_type_alias {
-    my ($type_alias_args) = @_;
+    my ($type_args) = @_;
 
-    return sub :prototype(;$) {
-        state $type = to_type($type_alias_args);
-
-        if (@_) {
-            unless (ref $type eq 'CODE') {
-                croak 'This type does not accept parameters';
-            }
-            return $type->(@_);
+    if ( (ref $type_args||'') eq 'CODE') {
+        return sub :prototype(;$) {
+            state $type = to_type($type_args);
+            $type->(@_);
+        };
+    }
+    else {
+        return sub :prototype() {
+            state $type = to_type($type_args);
+            $type;
         }
-        else {
-            return $type;
-        }
-    };
+    }
 }
 
 1;
@@ -127,7 +145,7 @@ Type::Alias - type alias for type constraints
 
 =head1 SYNOPSIS
 
-    use Type::Alias -declare => [qw(ID User List)];
+    use Type::Alias -alias => [qw(ID User)], -fun => [qw(List)];
     use Types::Standard -types;
 
     type ID => Str;
@@ -157,12 +175,29 @@ Type::Alias creates type aliases for existing type constraints such as Type::Tin
 
 =head2 IMPORT OPTIONS
 
-=head3 -declare
+=head3 -alias
 
-C<-declare> is an array reference that defines type aliases. The default is C<[]>.
+C<-alias> is an array reference that defines type aliases. The default is C<[]>.
 
-    use Type::Alias -declare => [qw(ID User List)];
+    use Type::Alias -alias => [qw(ID User)];
 
+    type ID => Str;
+
+    type User => {
+        id   => ID,
+        name => Str,
+        age  => Int,
+    };
+
+=head3 -fun
+
+C<-fun> is an array reference that defines type functions. The default is C<[]>.
+
+    use Type::Alias -fun => [qw(List)];
+
+    type List => sub($R) {
+       $R ? ArrayRef[$R] : ArrayRef;
+    };
 
 =head3 -type_alias
 
@@ -182,7 +217,7 @@ Given a type constraint in C<$type_alias_args>, it returns the type constraint a
 Type::Alias treats objects with C<check> and C<get_message> methods as type constraints.
 
     type ID => Str;
-    # sub ID(;$) { Str }
+    # sub ID() { Str }
 
 Given a hash reference in C<$type_alias_args>, it returns the type constraint defined by Type::Tiny's Dict type.
 
@@ -190,12 +225,12 @@ Given a hash reference in C<$type_alias_args>, it returns the type constraint de
         x => Int,
         y => Int,
     };
-    # sub Point(;$) { Dict[x=>Int,y=>Int] }
+    # sub Point() { Dict[x=>Int,y=>Int] }
 
 Given an array reference in C<$type_alias_args>, it returns the type constraint defined by Type::Tiny's Tuple type.
 
     type Option => [Str, Int];
-    # sub Option(;$) { Tuple[Str,Int] }
+    # sub Option() { Tuple[Str,Int] }
 
 Given a code reference in C<$type_alias_args>, it defines a type function that accepts a type constraint as an argument and return the type constraint.
 
