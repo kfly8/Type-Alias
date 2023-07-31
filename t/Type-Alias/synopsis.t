@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 
-use Type::Alias -declare => [qw(ID User List)];
+use Type::Alias -alias => [qw(ID User)], -fun => [qw(List)];
 use Types::Standard -types;
 
 type ID => Str;

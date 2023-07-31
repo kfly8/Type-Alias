@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 
-use Type::Alias -declare => [qw( X Y List )];
+use Type::Alias -alias => [qw( X Y )], -fun => [qw( List )];
 use Types::Standard -types;
 
 subtest 'type alias' => sub {
@@ -14,10 +14,7 @@ subtest 'type alias' => sub {
     is Y, Int;
 
     is X | Y, Str | Int;
-    TODO: {
-        local $TODO = '&X() & &Y() is not supported yet';
-        is X & Y, Str & Int;
-    }
+    is X & Y, Str & Int;
 };
 
 subtest 'type function' => sub {
@@ -33,12 +30,8 @@ subtest 'type function' => sub {
 };
 
 subtest 'type alias and type function' => sub {
-
     is X | List, Str | ArrayRef;
-    TODO: {
-        local $TODO = '&X() & &List() is not supported yet';
-        is X & List, Str & ArrayRef;
-    }
+    is X & List, Str & ArrayRef;
 };
 
 done_testing;

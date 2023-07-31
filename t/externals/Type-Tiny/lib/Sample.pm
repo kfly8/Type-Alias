@@ -5,7 +5,7 @@ use warnings;
 our @EXPORT_OK = qw( hello world ID User List );
 
 use Type::Library -base, -declare => qw( Bar );
-use Type::Alias -declare => [qw( ID User List)];
+use Type::Alias -alias => [qw( ID User )], -fun => [qw( List )];
 use Types::Standard -types;
 
 sub hello { "HELLO" }
