@@ -65,7 +65,7 @@
          "web" : "https://github.com/kfly8/Type-Alias"
       }
    },
-   "version" : "0.03",
+   "version" : "0.04",
    "x_authority" : "cpan:KFLY",
    "x_contributors" : [
       "kobaken <kentafly88@gmail.com>"
