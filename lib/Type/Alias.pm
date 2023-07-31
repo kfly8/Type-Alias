@@ -37,6 +37,7 @@ sub _import_type_alias_function {
 
         no strict qw(refs);
         no warnings qw(redefine); # Already define empty type alias at _import_type_aliases
+        no warnings qw(prototype); # Prototype mismatch: (;$) vs () or ($)
         *{"${target_package}::${type_alias_name}"} = generate_type_alias($type_alias_args);
     }
 }
@@ -101,19 +102,18 @@ sub to_type {
 sub generate_type_alias {
     my ($type_alias_args) = @_;
 
-    return sub :prototype(;$) {
-        state $type = to_type($type_alias_args);
-
-        if (@_) {
-            unless (ref $type eq 'CODE') {
-                croak 'This type does not accept parameters';
-            }
-            return $type->(@_);
+    if ( (ref $type_alias_args||'') eq 'CODE') {
+        return sub :prototype(;$) {
+            state $type = to_type($type_alias_args);
+            $type->(@_);
+        };
+    }
+    else {
+        return sub :prototype() {
+            state $type = to_type($type_alias_args);
+            $type;
         }
-        else {
-            return $type;
-        }
-    };
+    }
 }
 
 1;
@@ -182,7 +182,7 @@ Given a type constraint in C<$type_alias_args>, it returns the type constraint a
 Type::Alias treats objects with C<check> and C<get_message> methods as type constraints.
 
     type ID => Str;
-    # sub ID(;$) { Str }
+    # sub ID() { Str }
 
 Given a hash reference in C<$type_alias_args>, it returns the type constraint defined by Type::Tiny's Dict type.
 
@@ -190,12 +190,12 @@ Given a hash reference in C<$type_alias_args>, it returns the type constraint de
         x => Int,
         y => Int,
     };
-    # sub Point(;$) { Dict[x=>Int,y=>Int] }
+    # sub Point() { Dict[x=>Int,y=>Int] }
 
 Given an array reference in C<$type_alias_args>, it returns the type constraint defined by Type::Tiny's Tuple type.
 
     type Option => [Str, Int];
-    # sub Option(;$) { Tuple[Str,Int] }
+    # sub Option() { Tuple[Str,Int] }
 
 Given a code reference in C<$type_alias_args>, it defines a type function that accepts a type constraint as an argument and return the type constraint.
 
