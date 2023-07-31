@@ -7,61 +7,57 @@ our $VERSION = "0.03";
 use feature qw(state);
 use Carp qw(croak);
 use Scalar::Util qw(blessed);
-use Types::Standard qw(ArrayRef Dict Tuple);
+use Types::Standard qw(Dict Tuple);
 
 sub import {
     my ($class, %args) = @_;
 
     my $target_package = caller;
 
-    # define type alias function
-    my $type_alias_function_name = $args{'-type_alias'} // 'type';
-    $class->_import_type_alias_function($target_package, $type_alias_function_name);
-
-    # predefine type aliases
-    my $type_aliases = $args{'-alias'} // [];
-    $class->_import_type_aliases($target_package, $type_aliases);
-
-    # predefine type functions
-    my $type_functions = $args{'-fun'} // [];
-    $class->_import_type_funcitons($target_package, $type_functions);
+    $class->_define_type($target_package, $args{type});
+    $class->_predefine_type_aliases($target_package, $args{'-alias'});
+    $class->_predefine_type_functions($target_package, $args{'-fun'});
 }
 
-sub _import_type_alias_function {
-    my ($class, $target_package, $type_alias_function_name) = @_;
+sub _define_type {
+    my ($class, $target_package, $options) = @_;
+    $options //= {};
+    my $type_name = $options->{'-as'} // 'type';
 
-    if ($target_package->can($type_alias_function_name)) {
-        croak "Alreay exists function '${target_package}::${type_alias_function_name}'. Please use another type alias function name.";
+    if ($target_package->can($type_name)) {
+        croak "Alreay exists function '${target_package}::${type_name}'. Can specify another name: type => { -as => 'XXX' }.";
     }
 
     no strict qw(refs);
     no warnings qw(once);
-    *{"${target_package}::${type_alias_function_name}"} = sub {
-        my ($type_alias_name, $type_alias_args) = @_;
+    *{"${target_package}::${type_name}"} = sub {
+        my ($alias_name, $type_args) = @_;
 
         no strict qw(refs);
         no warnings qw(redefine); # Already define empty type alias at _import_type_aliases
-        *{"${target_package}::${type_alias_name}"} = generate_type_alias($type_alias_args);
+        *{"${target_package}::${alias_name}"} = generate_type_alias($type_args);
     }
 }
 
-sub _import_type_aliases {
+sub _predefine_type_aliases {
     my ($class, $target_package, $type_aliases) = @_;
+    $type_aliases //= [];
 
-    for my $type_alias (@$type_aliases) {
-        if ($target_package->can($type_alias)) {
-            croak "Cannot predeclare type alias '${target_package}::${type_alias}'.";
+    for my $alias_name (@$type_aliases) {
+        if ($target_package->can($alias_name)) {
+            croak "Cannot predeclare type alias '${target_package}::${alias_name}'.";
         }
 
         no strict qw(refs);
-        *{"${target_package}::${type_alias}"} = sub :prototype() {
-            croak "You should define type alias '$type_alias' before using it."
+        *{"${target_package}::${alias_name}"} = sub :prototype() {
+            croak "You should define type alias '$alias_name' before using it."
         }
     }
 }
 
-sub _import_type_funcitons {
+sub _predefine_type_functions {
     my ($class, $target_package, $type_functions) = @_;
+    $type_functions //= [];
 
     for my $type_function (@$type_functions) {
         if ($target_package->can($type_function)) {
@@ -199,11 +195,12 @@ C<-fun> is an array reference that defines type functions. The default is C<[]>.
        $R ? ArrayRef[$R] : ArrayRef;
     };
 
-=head3 -type_alias
+=head3 type
 
-C<-type_alias> is a function name that defines type aliases. The default name is B<type>.
+The C<type> option is used to configure the type function that defines type aliases and type functions.
 
-    use Type::Alias -type_alias => 'mytype';
+    # Rename type function:
+    use Type::Alias type => { -as => 'mytype' };
 
     mytype ID => Str; # declare type alias
 
