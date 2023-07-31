@@ -205,9 +205,64 @@ package MyApp {
 }
 ```
 
-## Function::Parameters
+## Class builders
 
-Type::Alias is designed to be used with Function::Parameters. The following is an example of using Type::Alias with Function::Parameters.
+Type::Alias is designed to be used with class builders such as [Moose](https://metacpan.org/pod/Moose), [Moo](https://metacpan.org/pod/Moo) and [Mouse](https://metacpan.org/pod/Mouse).
+
+```perl
+package Sample {
+    use Moose;
+
+    use Exporter 'import';
+    our @EXPORT_OK = qw( UserName );
+
+    use Type::Alias -alias => [qw( UserName )];
+    use Types::Standard qw( Str );
+
+    type UserName => Str & sub { length $_ > 1 };
+
+    has 'name' => (is => 'rw', isa => UserName);
+}
+
+package MyApp {
+
+    use Sample qw( UserName );
+
+    my $sample = Sample->new(name => 'hello');
+    $sample->hello; # => 'hello'
+    $sample->hello(''); # ERROR!
+
+    UserName->check('hello'); # OK
+}
+```
+
+## Validation modules
+
+Type::Alias is designed to be used with validation modules such as [Type::Params](https://metacpan.org/pod/Type%3A%3AParams), [Smart::Args::TypeTiny](https://metacpan.org/pod/Smart%3A%3AArgs%3A%3ATypeTiny) and [Data::Validator](https://metacpan.org/pod/Data%3A%3AValidator):
+
+```perl
+use Type::Alias -alias => [qw( Message )];
+use Types::Standard qw( Str );
+use Type::Params -sigs;
+
+type Message => Str & sub { length($_) > 1 };
+
+signature_for hello => (
+    positional => [ Message ],
+);
+
+sub hello {
+    my ($message) = @_;
+    return "HELLO " . $message;
+}
+
+hello('World') # => 'HELLO World';
+hello('') # => Error!
+```
+
+### NOTE
+
+[Function::Parameters](https://metacpan.org/pod/Function%3A%3AParameters) works using type aliases from outside.
 
 ```perl
 package Sample {

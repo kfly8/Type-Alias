@@ -313,9 +313,60 @@ Type::Alias is designed to be used with Exporter. The following is an example of
         Message->check('World!');
     }
 
-=head2 Function::Parameters
+=head2 Class builders
 
-Type::Alias is designed to be used with Function::Parameters. The following is an example of using Type::Alias with Function::Parameters.
+Type::Alias is designed to be used with class builders such as L<Moose>, L<Moo> and L<Mouse>.
+
+    package Sample {
+        use Moose;
+
+        use Exporter 'import';
+        our @EXPORT_OK = qw( UserName );
+
+        use Type::Alias -alias => [qw( UserName )];
+        use Types::Standard qw( Str );
+
+        type UserName => Str & sub { length $_ > 1 };
+
+        has 'name' => (is => 'rw', isa => UserName);
+    }
+
+    package MyApp {
+
+        use Sample qw( UserName );
+
+        my $sample = Sample->new(name => 'hello');
+        $sample->hello; # => 'hello'
+        $sample->hello(''); # ERROR!
+
+        UserName->check('hello'); # OK
+    }
+
+=head2 Validation modules
+
+Type::Alias is designed to be used with validation modules such as L<Type::Params>, L<Smart::Args::TypeTiny> and L<Data::Validator>:
+
+    use Type::Alias -alias => [qw( Message )];
+    use Types::Standard qw( Str );
+    use Type::Params -sigs;
+
+    type Message => Str & sub { length($_) > 1 };
+
+    signature_for hello => (
+        positional => [ Message ],
+    );
+
+    sub hello {
+        my ($message) = @_;
+        return "HELLO " . $message;
+    }
+
+    hello('World') # => 'HELLO World';
+    hello('') # => Error!
+
+=head3 NOTE
+
+L<Function::Parameters> works using type aliases from outside.
 
     package Sample {
 
