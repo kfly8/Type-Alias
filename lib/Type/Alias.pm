@@ -41,7 +41,6 @@ sub _import_type_alias_function {
 
         no strict qw(refs);
         no warnings qw(redefine); # Already define empty type alias at _import_type_aliases
-        no warnings qw(prototype); # Prototype mismatch: (;$) vs () or ($)
         *{"${target_package}::${type_alias_name}"} = generate_type_alias($type_alias_args);
     }
 }
