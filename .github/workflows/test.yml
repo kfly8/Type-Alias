@@ -20,7 +20,10 @@ jobs:
           ]
         include:
           - perl: 5.38
-            coverage: true
+            coverage_test: true
+            external_test: true
+          - perl: 5.36
+            external_test: true
 
     name: Perl ${{ matrix.perl }}
     steps:
@@ -38,8 +41,18 @@ jobs:
 
       - name: Install dependencies
         run: cpanm -nq --installdeps --with-develop --with-recommends .
-      - name: Run test
-        run: prove -lr t
+
+      - name: Install modules for external tests
+        if: ${{ matrix.external_test }}
+        run: |
+          cpm install -g Data::Validator
+          cpm install -g Exporter
+          cpm install -g Exporter::Tiny
+          cpm install -g Function::Parameters
+          cpm install -g Moo
+          cpm install -g Moose
+          cpm install -g Mouse
+          cpm install -g Smart::Args::TypeTiny
 
       - name: Build
         run: |
@@ -51,7 +64,7 @@ jobs:
           ./Build test
 
       - name: Run coverage
-        if: ${{ matrix.coverage }}
+        if: ${{ matrix.coverage_test }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
