@@ -1,6 +1,6 @@
 requires 'perl', '5.020000';
 
-requires 'Type::Tiny';
+requires 'Type::Tiny', '1.010002';
 
 on 'test' => sub {
     requires 'Test::More', '0.98';
