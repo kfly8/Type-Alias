@@ -42,7 +42,7 @@
       },
       "runtime" : {
          "requires" : {
-            "Type::Tiny" : "0",
+            "Type::Tiny" : "1.010002",
             "perl" : "5.020000"
          }
       },
@@ -65,7 +65,7 @@
          "web" : "https://github.com/kfly8/Type-Alias"
       }
    },
-   "version" : "0.04",
+   "version" : "0.05",
    "x_authority" : "cpan:KFLY",
    "x_contributors" : [
       "kobaken <kentafly88@gmail.com>"
