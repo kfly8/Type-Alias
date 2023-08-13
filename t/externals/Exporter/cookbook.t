@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use Test::More;
-use Test::Requires 'Exporter';
+use Test::Requires qw( Exporter Types::Common );
 
 use lib qw( ./t/externals/Exporter/lib );
 
