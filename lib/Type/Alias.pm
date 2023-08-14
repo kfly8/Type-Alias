@@ -12,13 +12,22 @@ use Types::Equal qw( Eq NumEq );
 
 use constant AVAILABLE_BUILTIN => $] >= 5.036;
 
-if (AVAILABLE_BUILTIN) {
-    eval q{ use experimental qw(builtin) };
-    die $@ if $@;
-}
-
 use constant True => Type::Tiny->new(name => 'True', parent => Bool, constraint => sub { $_ eq !!1 });
 use constant False => Type::Tiny->new(name => 'False', parent => Bool, constraint => sub { $_ eq !!0 });
+
+if (AVAILABLE_BUILTIN) {
+    eval q!
+        use experimental qw(builtin);
+        sub is_bool { builtin::is_bool($_[0]) }
+        sub created_as_number { builtin::created_as_number($_[0]) }
+    !;
+}
+else {
+    eval q!
+        sub is_bool { 0 }
+        sub created_as_number { 0 }
+    !;
+}
 
 sub import {
     my ($class, %args) = @_;
@@ -123,10 +132,10 @@ sub to_type {
             if (!defined $v) {
                 return Undef;
             }
-            elsif (builtin::is_bool($v)) {
+            elsif (is_bool($v)) {
                 $v ? True : False;
             }
-            elsif (builtin::created_as_number($v)) {
+            elsif (created_as_number($v)) {
                 NumEq[$v];
             }
             else { # string
