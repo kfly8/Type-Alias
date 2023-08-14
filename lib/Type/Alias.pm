@@ -2,7 +2,7 @@ package Type::Alias;
 use strict;
 use warnings;
 
-our $VERSION = "0.05";
+our $VERSION = "0.06";
 
 use feature qw(state);
 use Carp qw(croak);
