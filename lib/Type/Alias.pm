@@ -200,40 +200,51 @@ Type::Alias - type alias for type constraints
 
 =head1 SYNOPSIS
 
-    use Type::Alias -alias => [qw(ID User UserData)], -fun => [qw(List)];
     use Types::Standard -types;
+    use Type::Alias
+        -alias => [qw(ID User Guest LoginUser UserList)],
+        -fun => [qw(List)];
 
     type ID => Str;
 
-    type User => {
+    type LoginUser => {
+        _type => 'LoginUser',
         id   => ID,
         name => Str,
         age  => Int,
     };
+
+    type Guest => {
+        _type => 'Guest',
+        name => Str,
+    };
+
+    type User => LoginUser | Guest;
 
     type List => sub {
         my ($R) = @_;
         $R ? ArrayRef[$R] : ArrayRef;
     };
 
-    type UserData => List[User] | User;
+    type UserList => List[User];
 
-    UserData->check([
-        { id => '1', name => 'foo', age => 20 },
-        { id => '2', name => 'bar', age => 30 },
-    ]); # OK
+    UserList->check([
+        { _type => 'LoginUser', id => '1', name => 'foo', age => 20 },
+        { _type => 'Guest', name => 'bar' },
+    ]); # => OK
 
-    UserData->check(
-        { id => '1', name => 'foo', age => 20 },
-    ); # OK
-
-    # Internally List[User] is equivalent to the following type:
+    # Internally UserList is equivalent to the following type:
     #
     # ArrayRef[
     #     Dict[
-    #         age=>Int,
-    #         id=>Str,
-    #         name=>Str
+    #         _type => Eq['LoginUser'],
+    #         age => Int,
+    #         id => Str,
+    #         name => Str
+    #     ] |
+    #     Dict[
+    #         _type => Eq['Guest'],
+    #         name => Str
     #     ]
     # ]
 
@@ -280,8 +291,10 @@ The C<type> option is used to configure the type function that defines type alia
 
 =head3 type($alias_name, $type_args)
 
-C<type> is a function that defines type alias and type function.
+C<type> is a function that defines a type alias and a type function.
 It recursively generates type constraints based on C<$type_args>.
+
+=head4 C<$type_args> is a type constraint
 
 Given a type constraint in C<$type_args>, it returns the type constraint as is.
 Type::Alias treats objects with C<check> and C<get_message> methods as type constraints.
@@ -293,6 +306,59 @@ Type::Alias treats objects with C<check> and C<get_message> methods as type cons
 Internally C<ID> is equivalent to the following type:
 
     sub ID() { Str }
+
+=head4 C<$type_args> is an undefined value
+
+Given a undefined value in C<$type_args>, it returns the type constraint defined by Type::Tiny's Undef type.
+
+    type Foo => Undef;
+
+    Foo->check(undef); # OK
+
+Internally C<Foo> is equivalent to the following type:
+
+    sub Foo() { Undef }
+
+=head4 C<$type_args> is a string value
+
+Given a string value in C<$type_args>, it returns the type constraint defined by L<Types::Equal::Eq> type.
+
+    type ID => 'foo';
+
+    ID->check('foo'); # OK
+
+    type Published => 'published';
+    type Draft => 'draft';
+    type Status => Published | Draft;
+
+    Status->check('published'); # ok
+    Status->check('draft'); # ok
+
+Internally C<Status> is equivalent to the following type:
+
+    sub Status() { Eq['published'] | Eq['draft'] }
+
+=head4 C<$type_args> is a number value
+
+B<Available at v5.36 above. Less than v5.36, converts to Eq.>
+
+Given a number value in C<$type_args>, it returns the type constraint defined by L<Types::Equal::NumEq> type.
+
+    type Foo => 123;
+    # Foo is NumEq[123]; v5.36 above
+    # Foo is Eq[123]; # less than v5.36
+
+=head4 C<$type_args> is a boolean value
+
+B<Available at v5.36 above. Less than v5.36, converts to Eq.>
+
+Given a boolean value in C<$type_args>, it returns the type constraint defined by Type::Tiny's Bool type.
+
+    type Foo => !!1;
+    # Foo is Type::Alias::True; v5.36 above
+    # Foo is Eq[!!1]; # less than v5.36
+
+=head4 C<$type_args> is a hash reference
 
 Given a hash reference in C<$type_args>, it returns the type constraint defined by Type::Tiny's Dict type.
 
@@ -310,6 +376,8 @@ Internally C<Point> is equivalent to the following type:
 
     sub Point() { Dict[x=>Int,y=>Int] }
 
+=head4 C<$type_args> is an array reference
+
 Given an array reference in C<$type_args>, it returns the type constraint defined by Type::Tiny's Tuple type.
 
     type Option => [Str, Int];
@@ -320,7 +388,9 @@ Internally C<Option> is equivalent to the following type:
 
     sub Option() { Tuple[Str,Int] }
 
-Given a code reference in C<$type_args>, it defines a type function that accepts a type constraint as an argument and return the type constraint.
+=head4 C<$type_args> is a code reference
+
+Given a code reference in C<$type_args>, it defines a type function that accepts a type constraint as an argument and returns the type constraint.
 
     type List => sub($R) {
        $R ? ArrayRef[$R] : ArrayRef;
