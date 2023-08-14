@@ -43,6 +43,7 @@
       "runtime" : {
          "requires" : {
             "Type::Tiny" : "1.010002",
+            "Types::Equal" : "0.02",
             "perl" : "5.020000"
          }
       },

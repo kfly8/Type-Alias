@@ -7,7 +7,27 @@ our $VERSION = "0.05";
 use feature qw(state);
 use Carp qw(croak);
 use Scalar::Util qw(blessed);
-use Types::Standard qw(Dict Tuple);
+use Types::Standard qw(Dict Tuple Undef Bool);
+use Types::Equal qw( Eq NumEq );
+
+use constant AVAILABLE_BUILTIN => $] >= 5.036;
+
+use constant True => Type::Tiny->new(name => 'True', parent => Bool, constraint => sub { $_ eq !!1 });
+use constant False => Type::Tiny->new(name => 'False', parent => Bool, constraint => sub { $_ eq !!0 });
+
+if (AVAILABLE_BUILTIN) {
+    eval q!
+        use experimental qw(builtin);
+        sub is_bool { builtin::is_bool($_[0]) }
+        sub created_as_number { builtin::created_as_number($_[0]) }
+    !;
+}
+else {
+    eval q!
+        sub is_bool { die 'This perl version does not support builtin::is_bool' }
+        sub created_as_number { die 'This perl version does not support builtin::created_as_number' }
+    !;
+}
 
 sub import {
     my ($class, %args) = @_;
@@ -73,43 +93,82 @@ sub _predefine_type_functions {
 
 sub to_type {
     my $v = shift;
+
     if (blessed($v)) {
-        if ($v->can('check') && $v->can('get_message')) {
-            return $v;
-        }
-        else {
-            croak 'This object is not supported: '. ref $v;
-        }
+        _to_type_object($v);
     }
     elsif (ref $v) {
-        if (ref $v eq 'ARRAY') {
-            return Tuple[ map { to_type($_) } @$v ];
-        }
-        elsif (ref $v eq 'HASH') {
-            return Dict[
-                map { $_ => to_type($v->{$_}) } sort { $a cmp $b } keys %$v
-            ];
-        }
-        elsif (ref $v eq 'CODE') {
-            return sub {
-                my @args;
-                if (@_) {
-                    unless (@_ == 1 && ref $_[0] eq 'ARRAY') {
-                        croak 'This type requires an array reference';
-                    }
-                    @args = map { to_type($_) } @{$_[0]};
-                }
+        _to_type_reference($v);
+    }
+    else {
+        _to_type_scalar($v);
+    }
+}
 
-                to_type($v->(@args));
+sub _to_type_object {
+    my $v = $_[0];
+
+    if ($v->can('check') && $v->can('get_message')) {
+        return $v;
+    }
+    else {
+        croak 'This object is not supported: '. ref $v;
+    }
+}
+
+sub _to_type_reference {
+    my $v = $_[0];
+
+    if (ref $v eq 'ARRAY') {
+        return Tuple[ map { to_type($_) } @$v ];
+    }
+    elsif (ref $v eq 'HASH') {
+        return Dict[
+            map { $_ => to_type($v->{$_}) } sort { $a cmp $b } keys %$v
+        ];
+    }
+    elsif (ref $v eq 'CODE') {
+        return sub {
+            my @args;
+            if (@_) {
+                unless (@_ == 1 && ref $_[0] eq 'ARRAY') {
+                    croak 'This type requires an array reference';
+                }
+                @args = map { to_type($_) } @{$_[0]};
             }
-        }
-        else {
-            croak 'This reference is not supported: ' . ref $v ;
+
+            to_type($v->(@args));
         }
     }
     else {
-        # TODO: Is it better to make it a type that checks whether it matches the given value?
-        croak 'This value is not supported: ' . (defined $v ? $v : 'undef');
+        croak 'This reference is not supported: ' . ref $v ;
+    }
+}
+
+sub _to_type_scalar {
+    my $v = $_[0];
+
+    if (AVAILABLE_BUILTIN) {
+        if (!defined $v) {
+            return Undef;
+        }
+        elsif (is_bool($v)) {
+            $v ? True : False;
+        }
+        elsif (created_as_number($v)) {
+            NumEq[$v];
+        }
+        else { # string
+            Eq[$v];
+        }
+    }
+    else {
+        if (!defined $v) {
+            return Undef;
+        }
+        else { # string, number, bool
+            Eq[$v];
+        }
     }
 }
 
@@ -141,40 +200,51 @@ Type::Alias - type alias for type constraints
 
 =head1 SYNOPSIS
 
-    use Type::Alias -alias => [qw(ID User UserData)], -fun => [qw(List)];
     use Types::Standard -types;
+    use Type::Alias
+        -alias => [qw(ID User Guest LoginUser UserList)],
+        -fun => [qw(List)];
 
     type ID => Str;
 
-    type User => {
+    type LoginUser => {
+        _type => 'LoginUser',
         id   => ID,
         name => Str,
         age  => Int,
     };
+
+    type Guest => {
+        _type => 'Guest',
+        name => Str,
+    };
+
+    type User => LoginUser | Guest;
 
     type List => sub {
         my ($R) = @_;
         $R ? ArrayRef[$R] : ArrayRef;
     };
 
-    type UserData => List[User] | User;
+    type UserList => List[User];
 
-    UserData->check([
-        { id => '1', name => 'foo', age => 20 },
-        { id => '2', name => 'bar', age => 30 },
-    ]); # OK
+    UserList->check([
+        { _type => 'LoginUser', id => '1', name => 'foo', age => 20 },
+        { _type => 'Guest', name => 'bar' },
+    ]); # => OK
 
-    UserData->check(
-        { id => '1', name => 'foo', age => 20 },
-    ); # OK
-
-    # Internally List[User] is equivalent to the following type:
+    # Internally UserList is equivalent to the following type:
     #
     # ArrayRef[
     #     Dict[
-    #         age=>Int,
-    #         id=>Str,
-    #         name=>Str
+    #         _type => Eq['LoginUser'],
+    #         age => Int,
+    #         id => Str,
+    #         name => Str
+    #     ] |
+    #     Dict[
+    #         _type => Eq['Guest'],
+    #         name => Str
     #     ]
     # ]
 
@@ -221,8 +291,10 @@ The C<type> option is used to configure the type function that defines type alia
 
 =head3 type($alias_name, $type_args)
 
-C<type> is a function that defines type alias and type function.
+C<type> is a function that defines a type alias and a type function.
 It recursively generates type constraints based on C<$type_args>.
+
+=head4 C<$type_args> is a type constraint
 
 Given a type constraint in C<$type_args>, it returns the type constraint as is.
 Type::Alias treats objects with C<check> and C<get_message> methods as type constraints.
@@ -234,6 +306,59 @@ Type::Alias treats objects with C<check> and C<get_message> methods as type cons
 Internally C<ID> is equivalent to the following type:
 
     sub ID() { Str }
+
+=head4 C<$type_args> is an undefined value
+
+Given a undefined value in C<$type_args>, it returns the type constraint defined by Type::Tiny's Undef type.
+
+    type Foo => Undef;
+
+    Foo->check(undef); # OK
+
+Internally C<Foo> is equivalent to the following type:
+
+    sub Foo() { Undef }
+
+=head4 C<$type_args> is a string value
+
+Given a string value in C<$type_args>, it returns the type constraint defined by L<Types::Equal::Eq> type.
+
+    type ID => 'foo';
+
+    ID->check('foo'); # OK
+
+    type Published => 'published';
+    type Draft => 'draft';
+    type Status => Published | Draft;
+
+    Status->check('published'); # ok
+    Status->check('draft'); # ok
+
+Internally C<Status> is equivalent to the following type:
+
+    sub Status() { Eq['published'] | Eq['draft'] }
+
+=head4 C<$type_args> is a number value
+
+B<Available at v5.36 above. Less than v5.36, converts to Eq.>
+
+Given a number value in C<$type_args>, it returns the type constraint defined by L<Types::Equal::NumEq> type.
+
+    type Foo => 123;
+    # Foo is NumEq[123]; v5.36 above
+    # Foo is Eq[123]; # less than v5.36
+
+=head4 C<$type_args> is a boolean value
+
+B<Available at v5.36 above. Less than v5.36, converts to Eq.>
+
+Given a boolean value in C<$type_args>, it returns the type constraint defined by Type::Tiny's Bool type.
+
+    type Foo => !!1;
+    # Foo is Type::Alias::True; v5.36 above
+    # Foo is Eq[!!1]; # less than v5.36
+
+=head4 C<$type_args> is a hash reference
 
 Given a hash reference in C<$type_args>, it returns the type constraint defined by Type::Tiny's Dict type.
 
@@ -251,6 +376,8 @@ Internally C<Point> is equivalent to the following type:
 
     sub Point() { Dict[x=>Int,y=>Int] }
 
+=head4 C<$type_args> is an array reference
+
 Given an array reference in C<$type_args>, it returns the type constraint defined by Type::Tiny's Tuple type.
 
     type Option => [Str, Int];
@@ -261,7 +388,9 @@ Internally C<Option> is equivalent to the following type:
 
     sub Option() { Tuple[Str,Int] }
 
-Given a code reference in C<$type_args>, it defines a type function that accepts a type constraint as an argument and return the type constraint.
+=head4 C<$type_args> is a code reference
+
+Given a code reference in C<$type_args>, it defines a type function that accepts a type constraint as an argument and returns the type constraint.
 
     type List => sub($R) {
        $R ? ArrayRef[$R] : ArrayRef;
