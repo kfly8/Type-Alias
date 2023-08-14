@@ -163,8 +163,12 @@ sub _to_type_scalar {
         }
     }
     else {
-        # TODO: Is it better to make it a type that checks whether it matches the given value?
-        croak 'This value is not supported: ' . (defined $v ? $v : 'undef');
+        if (!defined $v) {
+            return Undef;
+        }
+        else { # string, number, bool
+            Eq[$v];
+        }
     }
 }
 

@@ -101,15 +101,24 @@ if (Type::Alias::AVAILABLE_BUILTIN) {
     };
 }
 else {
-    subtest 'If scalar is passed, throw error.' => sub {
-        eval { Type::Alias::to_type('hello') };
-        ok $@, 'does not support string';
+    subtest 'If undef is passed, return Undef type.' => sub {
+        is Type::Alias::to_type(undef), Undef;
+    };
 
-        eval { Type::Alias::to_type(!!1) };
-        ok $@, 'does not support boolean';
+    subtest 'If boolean is passed, return Eq type.' => sub {
+        is Type::Alias::to_type(!!1), Eq[!!1];
+        is Type::Alias::to_type(!!0), Eq[!!0];
+    };
 
-        eval { Type::Alias::to_type(undef) };
-        ok $@, 'does not support undef';
+    subtest 'If number is passed, return Eq type.' => sub {
+        is Type::Alias::to_type(123), Eq[123];
+        is Type::Alias::to_type(0), Eq[0];
+    };
+
+    subtest 'If string is passed, return Eq type.' => sub {
+        is Type::Alias::to_type('hello'), Eq['hello'];
+        is Type::Alias::to_type('123'), Eq['123'];
+        is Type::Alias::to_type(''), Eq[''];
     };
 }
 
