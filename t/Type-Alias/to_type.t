@@ -4,6 +4,7 @@ use Test::More;
 
 use Type::Alias ();
 use Types::Standard -types;
+use Types::Equal -types;
 
 package MyType {
     sub new { bless {}, shift }
@@ -78,18 +79,38 @@ subtest 'If regexref is passed, throw error.' => sub {
     ok $@;
 };
 
-subtest 'If scalar is passed, throw error.' => sub {
-    eval { Type::Alias::to_type(123) };
-    ok $@, 'does not support number';
+if (Type::Alias::AVAILABLE_BUILTIN) {
+    subtest 'If undef is passed, return Undef type.' => sub {
+        is Type::Alias::to_type(undef), Undef;
+    };
 
-    eval { Type::Alias::to_type('hello') };
-    ok $@, 'does not support string';
+    subtest 'If boolean is passed, return Boolean type.' => sub {
+        is Type::Alias::to_type(!!1), Type::Alias::True;
+        is Type::Alias::to_type(!!0), Type::Alias::False;
+    };
 
-    eval { Type::Alias::to_type(!!1) };
-    ok $@, 'does not support boolean';
+    subtest 'If number is passed, return NumEq type.' => sub {
+        is Type::Alias::to_type(123), NumEq[123];
+        is Type::Alias::to_type(0), NumEq[0];
+    };
 
-    eval { Type::Alias::to_type(undef) };
-    ok $@, 'does not support undef';
-};
+    subtest 'If string is passed, return Eq type.' => sub {
+        is Type::Alias::to_type('hello'), Eq['hello'];
+        is Type::Alias::to_type('123'), Eq['123'];
+        is Type::Alias::to_type(''), Eq[''];
+    };
+}
+else {
+    subtest 'If scalar is passed, throw error.' => sub {
+        eval { Type::Alias::to_type('hello') };
+        ok $@, 'does not support string';
+
+        eval { Type::Alias::to_type(!!1) };
+        ok $@, 'does not support boolean';
+
+        eval { Type::Alias::to_type(undef) };
+        ok $@, 'does not support undef';
+    };
+}
 
 done_testing;

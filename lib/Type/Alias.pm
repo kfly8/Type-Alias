@@ -7,7 +7,18 @@ our $VERSION = "0.05";
 use feature qw(state);
 use Carp qw(croak);
 use Scalar::Util qw(blessed);
-use Types::Standard qw(Dict Tuple);
+use Types::Standard qw(Dict Tuple Undef Bool);
+use Types::Equal qw( Eq NumEq );
+
+use constant AVAILABLE_BUILTIN => $] >= 5.036;
+
+if (AVAILABLE_BUILTIN) {
+    eval q{ use experimental qw(builtin) };
+    die $@ if $@;
+}
+
+use constant True => Type::Tiny->new(name => 'True', parent => Bool, constraint => sub { $_ eq !!1 });
+use constant False => Type::Tiny->new(name => 'False', parent => Bool, constraint => sub { $_ eq !!0 });
 
 sub import {
     my ($class, %args) = @_;
@@ -108,8 +119,24 @@ sub to_type {
         }
     }
     else {
-        # TODO: Is it better to make it a type that checks whether it matches the given value?
-        croak 'This value is not supported: ' . (defined $v ? $v : 'undef');
+        if (AVAILABLE_BUILTIN) {
+            if (!defined $v) {
+                return Undef;
+            }
+            elsif (builtin::is_bool($v)) {
+                $v ? True : False;
+            }
+            elsif (builtin::created_as_number($v)) {
+                NumEq[$v];
+            }
+            else { # string
+                Eq[$v];
+            }
+        }
+        else {
+            # TODO: Is it better to make it a type that checks whether it matches the given value?
+            croak 'This value is not supported: ' . (defined $v ? $v : 'undef');
+        }
     }
 }
 
