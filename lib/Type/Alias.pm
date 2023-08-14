@@ -24,8 +24,8 @@ if (AVAILABLE_BUILTIN) {
 }
 else {
     eval q!
-        sub is_bool { 0 }
-        sub created_as_number { 0 }
+        sub is_bool { die 'This perl version does not support builtin::is_bool' }
+        sub created_as_number { die 'This perl version does not support builtin::created_as_number' }
     !;
 }
 
@@ -93,59 +93,78 @@ sub _predefine_type_functions {
 
 sub to_type {
     my $v = shift;
+
     if (blessed($v)) {
-        if ($v->can('check') && $v->can('get_message')) {
-            return $v;
-        }
-        else {
-            croak 'This object is not supported: '. ref $v;
-        }
+        _to_type_object($v);
     }
     elsif (ref $v) {
-        if (ref $v eq 'ARRAY') {
-            return Tuple[ map { to_type($_) } @$v ];
-        }
-        elsif (ref $v eq 'HASH') {
-            return Dict[
-                map { $_ => to_type($v->{$_}) } sort { $a cmp $b } keys %$v
-            ];
-        }
-        elsif (ref $v eq 'CODE') {
-            return sub {
-                my @args;
-                if (@_) {
-                    unless (@_ == 1 && ref $_[0] eq 'ARRAY') {
-                        croak 'This type requires an array reference';
-                    }
-                    @args = map { to_type($_) } @{$_[0]};
-                }
+        _to_type_reference($v);
+    }
+    else {
+        _to_type_scalar($v);
+    }
+}
 
-                to_type($v->(@args));
+sub _to_type_object {
+    my $v = $_[0];
+
+    if ($v->can('check') && $v->can('get_message')) {
+        return $v;
+    }
+    else {
+        croak 'This object is not supported: '. ref $v;
+    }
+}
+
+sub _to_type_reference {
+    my $v = $_[0];
+
+    if (ref $v eq 'ARRAY') {
+        return Tuple[ map { to_type($_) } @$v ];
+    }
+    elsif (ref $v eq 'HASH') {
+        return Dict[
+            map { $_ => to_type($v->{$_}) } sort { $a cmp $b } keys %$v
+        ];
+    }
+    elsif (ref $v eq 'CODE') {
+        return sub {
+            my @args;
+            if (@_) {
+                unless (@_ == 1 && ref $_[0] eq 'ARRAY') {
+                    croak 'This type requires an array reference';
+                }
+                @args = map { to_type($_) } @{$_[0]};
             }
-        }
-        else {
-            croak 'This reference is not supported: ' . ref $v ;
+
+            to_type($v->(@args));
         }
     }
     else {
-        if (AVAILABLE_BUILTIN) {
-            if (!defined $v) {
-                return Undef;
-            }
-            elsif (is_bool($v)) {
-                $v ? True : False;
-            }
-            elsif (created_as_number($v)) {
-                NumEq[$v];
-            }
-            else { # string
-                Eq[$v];
-            }
+        croak 'This reference is not supported: ' . ref $v ;
+    }
+}
+
+sub _to_type_scalar {
+    my $v = $_[0];
+
+    if (AVAILABLE_BUILTIN) {
+        if (!defined $v) {
+            return Undef;
         }
-        else {
-            # TODO: Is it better to make it a type that checks whether it matches the given value?
-            croak 'This value is not supported: ' . (defined $v ? $v : 'undef');
+        elsif (is_bool($v)) {
+            $v ? True : False;
         }
+        elsif (created_as_number($v)) {
+            NumEq[$v];
+        }
+        else { # string
+            Eq[$v];
+        }
+    }
+    else {
+        # TODO: Is it better to make it a type that checks whether it matches the given value?
+        croak 'This value is not supported: ' . (defined $v ? $v : 'undef');
     }
 }
 
